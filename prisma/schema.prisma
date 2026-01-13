@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 営業マスタ
+// ============================================
+model SalesPerson {
+  id            BigInt    @id @default(autoincrement())
+  name          String    @db.VarChar(100)
+  email         String    @unique @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  department    String?   @db.VarChar(100)
+  isManager     Boolean   @default(false) @map("is_manager")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // リレーション
+  dailyReports    DailyReport[]
+  managerComments ManagerComment[]
+
+  @@map("SALES_PERSON")
+  @@index([department], name: "IDX_SALES_PERSON_DEPARTMENT")
+}
+
+// ============================================
+// 顧客マスタ
+// ============================================
+model Customer {
+  id            BigInt    @id @default(autoincrement())
+  companyName   String    @map("company_name") @db.VarChar(200)
+  companyPerson String?   @map("company_person") @db.VarChar(100)
+  email         String?   @db.VarChar(255)
+  address       String?   @db.VarChar(500)
+  phone         String?   @db.VarChar(20)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // リレーション
+  visitRecords VisitRecord[]
+
+  @@map("CUSTOMER")
+  @@index([companyName], name: "IDX_CUSTOMER_COMPANY_NAME")
+}
+
+// ============================================
+// 日報
+// ============================================
+model DailyReport {
+  id            BigInt    @id @default(autoincrement())
+  salesPersonId BigInt    @map("sales_person_id")
+  reportDate    DateTime  @map("report_date") @db.Date
+  problem       String?   @db.Text
+  plan          String?   @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // リレーション
+  salesPerson     SalesPerson      @relation(fields: [salesPersonId], references: [id])
+  visitRecords    VisitRecord[]
+  managerComments ManagerComment[]
+
+  @@unique([salesPersonId, reportDate], name: "UK_DAILY_REPORT_PERSON_DATE")
+  @@map("DAILY_REPORT")
+  @@index([reportDate], name: "IDX_DAILY_REPORT_DATE")
+}
+
+// ============================================
+// 訪問記録
+// ============================================
+model VisitRecord {
+  id           BigInt    @id @default(autoincrement())
+  reportId     BigInt    @map("report_id")
+  customerId   BigInt    @map("customer_id")
+  visitTime    DateTime? @map("visit_time") @db.Time(0)
+  visitContent String    @map("visit_content") @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // リレーション
+  dailyReport DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  customer    Customer    @relation(fields: [customerId], references: [id])
+
+  @@map("VISIT_RECORD")
+  @@index([reportId], name: "IDX_VISIT_RECORD_REPORT")
+  @@index([customerId], name: "IDX_VISIT_RECORD_CUSTOMER")
+}
+
+// ============================================
+// 上長コメント
+// ============================================
+model ManagerComment {
+  id        BigInt   @id @default(autoincrement())
+  reportId  BigInt   @map("report_id")
+  managerId BigInt   @map("manager_id")
+  coment    String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  dailyReport DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  manager     SalesPerson @relation(fields: [managerId], references: [id])
+
+  @@map("MANAGER_COMMENT")
+  @@index([reportId], name: "IDX_MANAGER_COMMENT_REPORT")
+  @@index([managerId], name: "IDX_MANAGER_COMMENT_MANAGER")
+}

@@ -1,0 +1,107 @@
+-- CreateTable
+CREATE TABLE "SALES_PERSON" (
+    "id" BIGSERIAL NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "password" VARCHAR(255) NOT NULL,
+    "department" VARCHAR(100),
+    "is_manager" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SALES_PERSON_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CUSTOMER" (
+    "id" BIGSERIAL NOT NULL,
+    "company_name" VARCHAR(200) NOT NULL,
+    "company_person" VARCHAR(100),
+    "email" VARCHAR(255),
+    "address" VARCHAR(500),
+    "phone" VARCHAR(20),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CUSTOMER_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DAILY_REPORT" (
+    "id" BIGSERIAL NOT NULL,
+    "sales_person_id" BIGINT NOT NULL,
+    "report_date" DATE NOT NULL,
+    "problem" TEXT,
+    "plan" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DAILY_REPORT_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VISIT_RECORD" (
+    "id" BIGSERIAL NOT NULL,
+    "report_id" BIGINT NOT NULL,
+    "customer_id" BIGINT NOT NULL,
+    "visit_time" TIME(0),
+    "visit_content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VISIT_RECORD_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MANAGER_COMMENT" (
+    "id" BIGSERIAL NOT NULL,
+    "report_id" BIGINT NOT NULL,
+    "manager_id" BIGINT NOT NULL,
+    "coment" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "MANAGER_COMMENT_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SALES_PERSON_email_key" ON "SALES_PERSON"("email");
+
+-- CreateIndex
+CREATE INDEX "IDX_SALES_PERSON_DEPARTMENT" ON "SALES_PERSON"("department");
+
+-- CreateIndex
+CREATE INDEX "IDX_CUSTOMER_COMPANY_NAME" ON "CUSTOMER"("company_name");
+
+-- CreateIndex
+CREATE INDEX "IDX_DAILY_REPORT_DATE" ON "DAILY_REPORT"("report_date");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "DAILY_REPORT_sales_person_id_report_date_key" ON "DAILY_REPORT"("sales_person_id", "report_date");
+
+-- CreateIndex
+CREATE INDEX "IDX_VISIT_RECORD_REPORT" ON "VISIT_RECORD"("report_id");
+
+-- CreateIndex
+CREATE INDEX "IDX_VISIT_RECORD_CUSTOMER" ON "VISIT_RECORD"("customer_id");
+
+-- CreateIndex
+CREATE INDEX "IDX_MANAGER_COMMENT_REPORT" ON "MANAGER_COMMENT"("report_id");
+
+-- CreateIndex
+CREATE INDEX "IDX_MANAGER_COMMENT_MANAGER" ON "MANAGER_COMMENT"("manager_id");
+
+-- AddForeignKey
+ALTER TABLE "DAILY_REPORT" ADD CONSTRAINT "DAILY_REPORT_sales_person_id_fkey" FOREIGN KEY ("sales_person_id") REFERENCES "SALES_PERSON"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "VISIT_RECORD" ADD CONSTRAINT "VISIT_RECORD_report_id_fkey" FOREIGN KEY ("report_id") REFERENCES "DAILY_REPORT"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "VISIT_RECORD" ADD CONSTRAINT "VISIT_RECORD_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MANAGER_COMMENT" ADD CONSTRAINT "MANAGER_COMMENT_report_id_fkey" FOREIGN KEY ("report_id") REFERENCES "DAILY_REPORT"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MANAGER_COMMENT" ADD CONSTRAINT "MANAGER_COMMENT_manager_id_fkey" FOREIGN KEY ("manager_id") REFERENCES "SALES_PERSON"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
